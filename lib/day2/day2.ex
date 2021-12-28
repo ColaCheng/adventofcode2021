@@ -11,6 +11,16 @@ defmodule Day2 do
     x * z
   end
 
+  def run2() do
+    {:ok, file} = File.open(@input_file, [:read])
+
+    {x, _, depth} =
+      IO.read(file, :line)
+      |> read_line_reduce(file, {0, 0, 0}, &sail2/2)
+
+    x * depth
+  end
+
   defp read_line_reduce(:eof, file, acc, _reducer) do
     File.close(file)
     acc
@@ -44,5 +54,23 @@ defmodule Day2 do
 
   defp sail({"down", unit}, {horizontal_position, depth}) do
     {horizontal_position, depth + unit}
+  end
+
+  defp sail2({"forward", unit}, {horizontal_position, aim, depth}) do
+    {horizontal_position + unit, aim, depth + aim * unit}
+  end
+
+  defp sail2({"up", unit}, {horizontal_position, aim, depth}) do
+    new_aim =
+      case aim - unit do
+        r when r < 0 -> 0
+        r -> r
+      end
+
+    {horizontal_position, new_aim, depth}
+  end
+
+  defp sail2({"down", unit}, {horizontal_position, aim, depth}) do
+    {horizontal_position, aim + unit, depth}
   end
 end
