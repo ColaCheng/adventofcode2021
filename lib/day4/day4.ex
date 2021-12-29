@@ -16,7 +16,7 @@ defmodule Day4 do
       gen_boards(boards_string, [])
       |> Enum.reverse()
 
-    {_, {last_number, draws, board}} = play_all_board(draw_numbers, boards)
+    {_, {last_number, draws, board}} = play_first_win(draw_numbers, boards)
 
     Map.drop(board, draws)
     |> Map.keys()
@@ -68,7 +68,7 @@ defmodule Day4 do
 
   defp gen_boards([], acc), do: acc
 
-  defp play_all_board([draw_number | tail], boards) do
+  defp play_first_win([draw_number | tail], boards) do
     case Enum.reduce_while(boards, {nil, []}, fn {board, statistic}, {_, acc} ->
            case play(draw_number, board, statistic) do
              {nil, statistic} ->
@@ -78,12 +78,12 @@ defmodule Day4 do
                {:halt, {:bingo, {draw_number, Map.get(statistic, :draw, []), board}}}
            end
          end) do
-      {nil, boards} -> play_all_board(tail, Enum.reverse(boards))
+      {nil, boards} -> play_first_win(tail, Enum.reverse(boards))
       {:bingo, result} -> {:bingo, result}
     end
   end
 
-  defp play_all_board([], _), do: nil
+  defp play_first_win([], _), do: nil
 
   defp play_last_win([draw_number | tail], boards) do
     case Enum.reduce(boards, {nil, []}, fn {board, statistic}, {previous_bingo, board_acc} ->
