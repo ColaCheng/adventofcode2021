@@ -24,6 +24,29 @@ defmodule Day4 do
     |> Kernel.*(last_number)
   end
 
+  def run2() do
+    {:ok, file} = File.open(@input_file, [:read])
+
+    [draw_numbers_string | boards_string] =
+      IO.read(file, :all)
+      |> String.split("\n\n", trim: true)
+
+    draw_numbers =
+      String.split(draw_numbers_string, ",")
+      |> Enum.map(&String.to_integer/1)
+
+    boards =
+      gen_boards(boards_string, [])
+      |> Enum.reverse()
+
+    {_, {last_number, draws, board}} = play_last_win(draw_numbers, boards)
+
+    Map.drop(board, draws)
+    |> Map.keys()
+    |> Enum.sum()
+    |> Kernel.*(last_number)
+  end
+
   defp gen_boards([board_string | tail], acc) do
     {board, _} =
       String.split(board_string, "\n", trim: true)
@@ -61,6 +84,23 @@ defmodule Day4 do
   end
 
   defp play_all_board([], _), do: nil
+
+  defp play_last_win([draw_number | tail], boards) do
+    case Enum.reduce(boards, {nil, []}, fn {board, statistic}, {previous_bingo, board_acc} ->
+           case play(draw_number, board, statistic) do
+             {nil, statistic} ->
+               {previous_bingo, [{board, statistic} | board_acc]}
+
+             {:bingo, statistic} ->
+               {{draw_number, Map.get(statistic, :draw, []), board}, board_acc}
+           end
+         end) do
+      {last_bingo, []} -> {:last_bingo, last_bingo}
+      {_, boards} -> play_last_win(tail, Enum.reverse(boards))
+    end
+  end
+
+  defp play_last_win([], _), do: nil
 
   defp play(draw_number, board, statistic) do
     case Map.get(board, draw_number, nil) do
