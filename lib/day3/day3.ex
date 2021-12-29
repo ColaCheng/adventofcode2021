@@ -14,6 +14,14 @@ defmodule Day3 do
     gamma_rare * epislon
   end
 
+  def run2() do
+    {:ok, file} = File.open(@input_file, [:read])
+
+    IO.read(file, :line)
+    |> read_line_reduce(file, {{[], 0}, {[], 0}}, &diagnose_life_support/2)
+    |> report_life_support()
+  end
+
   defp read_line_reduce(:eof, file, acc, _reducer) do
     File.close(file)
     acc
@@ -64,5 +72,73 @@ defmodule Day3 do
     bits = map_size(summary)
     epsilon = bxor(gamma, (1 <<< bits) - 1)
     {gamma, epsilon}
+  end
+
+  defp diagnose_life_support(<<"0", res::binary>>, {{low, low_count}, high}),
+    do: {{[res | low], low_count + 1}, high}
+
+  defp diagnose_life_support(<<"1", res::binary>>, {low, {high, high_count}}),
+    do: {low, {[res | high], high_count + 1}}
+
+  defp diagnose_life_support("", acc), do: acc
+
+  defp report_bit_life_support_rating({{low, low_count}, {high, high_count}})
+       when low_count > high_count do
+    {{"0", low}, {"1", high}}
+  end
+
+  defp report_bit_life_support_rating({{low, _low_count}, {high, _high_count}}) do
+    {{"1", high}, {"0", low}}
+  end
+
+  defp scan_life_support([number | tail], bit_length, type, {acc, gas_rating, _}) do
+    scan_life_support(
+      tail,
+      bit_length,
+      type,
+      {diagnose_life_support(number, acc), gas_rating, number}
+    )
+  end
+
+  defp scan_life_support([], bit_length, type, {acc, gas_rating, last}) do
+    report = report_bit_life_support_rating(acc)
+
+    {bit_gas, gas_set} =
+      case type do
+        :o2 -> elem(report, 0)
+        :co2 -> elem(report, 1)
+      end
+
+    case gas_set do
+      [] when byte_size(gas_rating) < bit_length ->
+        gas_rating <> last
+
+      [] ->
+        gas_rating
+
+      _ ->
+        scan_life_support(
+          gas_set,
+          bit_length,
+          type,
+          {{{[], 0}, {[], 0}}, gas_rating <> bit_gas, last}
+        )
+    end
+  end
+
+  defp report_life_support(first_scan) do
+    {{o2, [n | _] = o2_set}, {co2, co2_set}} = report_bit_life_support_rating(first_scan)
+    bit_length = String.length(n) + 1
+    IO.inspect(bit_length)
+
+    o2_result =
+      scan_life_support(o2_set, bit_length, :o2, {{{[], 0}, {[], 0}}, o2, ""})
+      |> String.to_integer(2)
+
+    co2_result =
+      scan_life_support(co2_set, bit_length, :co2, {{{[], 0}, {[], 0}}, co2, ""})
+      |> String.to_integer(2)
+
+    o2_result * co2_result
   end
 end
