@@ -25,25 +25,29 @@ defmodule Day6 do
   end
 
   defp prepare(fishes) do
-    Enum.map(fishes, &({&1, 1}))
+    Enum.map(fishes, &{&1, 1})
   end
 
   defp consolidate(fishes) do
-    Enum.group_by(fishes, &(elem(&1, 0)))
+    Enum.group_by(fishes, &elem(&1, 0))
     |> Enum.map(fn {timer, counts} ->
-      sum = Enum.map(counts, &(elem(&1, 1)))
-      |> Enum.sum()
+      sum =
+        Enum.map(counts, &elem(&1, 1))
+        |> Enum.sum()
+
       {timer, sum}
     end)
   end
 
   defp next(fishes) do
-    {fishes1, new} = Enum.map_reduce(fishes, 0, fn({timer, n}, acc) ->
-      case timer do
-        0 -> {{6, n}, acc + n}
-        _ -> {{timer - 1, n}, acc}
-      end
-    end)
+    {fishes1, new} =
+      Enum.map_reduce(fishes, 0, fn {timer, n}, acc ->
+        case timer do
+          0 -> {{6, n}, acc + n}
+          _ -> {{timer - 1, n}, acc}
+        end
+      end)
+
     consolidate([{8, new} | fishes1])
   end
 end
