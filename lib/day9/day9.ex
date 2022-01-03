@@ -12,6 +12,28 @@ defmodule Day9 do
     |> Enum.reduce(0, &(elem(&1, 1) + 1 + &2))
   end
 
+  def run2() do
+    {:ok, file} = File.open(@input_file, [:read])
+
+    map =
+      IO.read(file, :line)
+      |> read_line_reduce(file, {0, []}, &process/2)
+      |> elem(1)
+      |> Enum.reject(&(elem(&1, 1) == 9))
+      |> Map.new()
+
+    union =
+      Enum.map(map, fn {k, _} -> {k, k} end)
+      |> Map.new()
+
+    find_basin(map, union)
+    |> Enum.map(fn {_, members} -> length(members) end)
+    |> Enum.sort()
+    |> Enum.reverse()
+    |> Enum.take(3)
+    |> Enum.reduce(1, &(&1 * &2))
+  end
+
   defp read_line_reduce(:eof, file, acc, _reducer) do
     File.close(file)
     acc
@@ -45,5 +67,31 @@ defmodule Day9 do
   defp neighbors(summary, {x, y}) do
     [{x, y - 1}, {x, y + 1}, {x - 1, y}, {x + 1, y}]
     |> Enum.filter(&Map.has_key?(summary, &1))
+  end
+
+  defp find_basin(map, union) do
+    Enum.reduce(union, union, fn {this, _}, acc ->
+      neighbors(map, this)
+      |> Enum.reduce(acc, fn neighbor, acc ->
+        union(acc, this, neighbor)
+      end)
+    end)
+    |> Enum.group_by(fn {_, v} -> v end)
+  end
+
+  defp union(u, p, q) do
+    case u do
+      %{^p => t, ^q => t} ->
+        u
+
+      %{^p => t1, ^q => t2} ->
+        Enum.reduce(u, u, fn
+          {key, ^t1}, acc ->
+            Map.put(acc, key, t2)
+
+          _, acc ->
+            acc
+        end)
+    end
   end
 end
