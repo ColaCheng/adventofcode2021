@@ -16,6 +16,24 @@ defmodule Day10 do
     end)
   end
 
+  def run2() do
+    {:ok, file} = File.open(@input_file, [:read])
+
+    scores =
+      IO.read(file, :line)
+      |> read_line_reduce(file, [], &process/2)
+      |> Enum.reduce([], fn
+        {[], incomplete}, acc ->
+          [Enum.reduce(incomplete, 0, &(&2 * 5 + incomplete_point(&1))) | acc]
+
+        _, acc ->
+          acc
+      end)
+      |> Enum.sort()
+
+    Enum.at(scores, div(length(scores), 2))
+  end
+
   defp read_line_reduce(:eof, file, acc, _reducer) do
     File.close(file)
     acc
@@ -57,4 +75,9 @@ defmodule Day10 do
   defp point("]"), do: 57
   defp point("}"), do: 1197
   defp point(">"), do: 25137
+
+  defp incomplete_point("("), do: 1
+  defp incomplete_point("["), do: 2
+  defp incomplete_point("{"), do: 3
+  defp incomplete_point("<"), do: 4
 end
