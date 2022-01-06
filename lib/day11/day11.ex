@@ -10,7 +10,29 @@ defmodule Day11 do
       |> elem(1)
       |> Map.new()
 
-    progress(round, grid, 0)
+    Stream.iterate({grid, 0}, &progress/1)
+    |> Stream.drop(round)
+    |> Enum.take(1)
+    |> hd()
+    |> elem(1)
+  end
+
+  def run2() do
+    {:ok, file} = File.open(@input_file, [:read])
+
+    grid =
+      IO.read(file, :line)
+      |> read_line_reduce(file, {0, []}, &process/2)
+      |> elem(1)
+      |> Map.new()
+
+    Stream.iterate({grid, 0}, &progress/1)
+    |> Stream.with_index()
+    |> Stream.drop_while(fn {{grid, _}, _} ->
+      Enum.any?(grid, fn {_, energy} -> energy != 0 end)
+    end)
+    |> Enum.take(1)
+    |> hd()
     |> elem(1)
   end
 
@@ -51,9 +73,7 @@ defmodule Day11 do
     |> Enum.filter(&Map.has_key?(grid, &1))
   end
 
-  defp progress(0, map, acc), do: {map, acc}
-
-  defp progress(round, grid, num_flashes) do
+  defp progress({grid, num_flashes}) do
     grid =
       Enum.map(grid, fn {k, v} -> {k, v + 1} end)
       |> Map.new()
@@ -69,7 +89,7 @@ defmodule Day11 do
       end)
       |> Map.new()
 
-    progress(round - 1, grid, num_flashes)
+    {grid, num_flashes}
   end
 
   defp flash(grid, [_ | _] = flashes, num_flashes) do
