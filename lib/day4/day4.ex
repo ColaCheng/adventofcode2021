@@ -132,7 +132,6 @@ defmodule Day4 do
   end
 
   defp is_bingo?([], acc), do: acc
-  defp is_bingo?(_, acc), do: acc
 
   defp draw_number(coordinate, statistic) do
     update_line(coordinate, statistic)
