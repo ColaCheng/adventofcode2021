@@ -21,6 +21,28 @@ defmodule Day13 do
     |> MapSet.size()
   end
 
+  def run2() do
+    {:ok, file} = File.open(@input_file, [:read])
+
+    {coordinates, folds} =
+      IO.read(file, :line)
+      |> read_line_reduce(file, {[], []}, &process/2)
+
+    folds = Enum.reverse(folds)
+
+    Enum.reduce(folds, coordinates, fn fold_i, coordinates ->
+      Enum.reduce(coordinates, [], fn
+        coordinate, acc ->
+          case fold(coordinate, fold_i) do
+            nil -> acc
+            coordinate -> [coordinate | acc]
+          end
+      end)
+    end)
+    |> MapSet.new()
+    |> print()
+  end
+
   defp read_line_reduce(:eof, file, acc, _reducer) do
     File.close(file)
     acc
@@ -56,4 +78,22 @@ defmodule Day13 do
   defp fold({x, y}, {:x, line}) when x > line, do: {line - (x - line), y}
   defp fold({x, y}, {:y, line}) when y > line, do: {x, line - (y - line)}
   defp fold(coordinate, _), do: coordinate
+
+  defp print(coordinates) do
+    {{min_x, _}, {max_x, _}} = Enum.min_max_by(coordinates, &elem(&1, 0))
+    {{_, min_y}, {_, max_y}} = Enum.min_max_by(coordinates, &elem(&1, 1))
+    :io.nl()
+
+    Enum.each(min_x..max_x, fn x ->
+      Enum.map(min_y..max_y, fn y ->
+        case MapSet.member?(coordinates, {x, y}) do
+          true -> ?#
+          false -> ?.
+        end
+      end)
+      |> IO.puts()
+    end)
+
+    :io.nl()
+  end
 end
