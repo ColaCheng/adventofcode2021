@@ -11,6 +11,42 @@ defmodule Day15 do
     |> travel()
   end
 
+  def run2() do
+    {:ok, file} = File.open(@input_file, [:read])
+
+    map =
+      IO.read(file, :line)
+      |> read_line_reduce(file, {[], 0}, &process/2)
+      |> elem(0)
+      |> Map.new()
+
+    {x_end, y_end} = find_lower_right(map)
+    width = x_end + 1
+    height = y_end + 1
+
+    Enum.reduce(map, [], fn {{x, y}, v}, acc ->
+      [
+        {{x, y}, v}
+        | Enum.reduce(1..4, acc, fn index, acc ->
+            [{{x + index * width, y}, under_nine(v + index)} | acc]
+          end)
+      ]
+    end)
+    |> Enum.reduce([], fn {{x, y}, v}, acc ->
+      [
+        {{x, y}, v}
+        | Enum.reduce(1..4, acc, fn index, acc ->
+            [{{x, y + index * height}, under_nine(v + index)} | acc]
+          end)
+      ]
+    end)
+    |> Map.new()
+    |> travel()
+  end
+
+  defp under_nine(v) when v > 9, do: v - 9
+  defp under_nine(v), do: v
+
   defp read_line_reduce(:eof, file, acc, _reducer) do
     File.close(file)
     acc
